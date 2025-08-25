@@ -15,19 +15,8 @@ LAlt::LWin
 #l::#Right
 #f::F11
 #q::!F4
-#Tab::
-    Send "{Alt down}{Tab}"
-    while GetKeyState("Win", "P")
-    {
-        if GetKeyState("Tab", "P")
-        {
-            Send "{Tab}"
-            KeyWait "Tab"
-        }
-        Sleep 10
-    }
-    Send "{Alt up}"
-    return
+#Tab::AltTab
+#+Tab::ShiftAltTab
 
 ; Pause/Break to toggle Zoom mute
 Pause::
@@ -42,7 +31,8 @@ Pause::
     }
 }
 
-; Backup right click option
+; Right click mapping
+RButton::LButton
 AppsKey::RButton
 
 ; Trackball scrolling
