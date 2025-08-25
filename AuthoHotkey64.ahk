@@ -8,6 +8,40 @@ Escape::CapsLock
 LWin::LAlt
 LAlt::LWin
 
+; Window Management
+#h::#Left
+#j::#Down
+#k::#Up
+#l::#Right
+#f::F11
+#q::!F4
+#Tab::
+    Send "{Alt down}{Tab}"
+    while GetKeyState("Win", "P")
+    {
+        if GetKeyState("Tab", "P")
+        {
+            Send "{Tab}"
+            KeyWait "Tab"
+        }
+        Sleep 10
+    }
+    Send "{Alt up}"
+    return
+
+; Pause/Break to toggle Zoom mute
+Pause::
+{
+    if WinActive("ahk_exe zoom.exe")
+    {
+        Send "!a"
+    }
+    else
+    {
+        ControlSend "!a", , "ahk_class ZPToolBarParentWndClass"
+    }
+}
+
 ; Backup right click option
 AppsKey::RButton
 
