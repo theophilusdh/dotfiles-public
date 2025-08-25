@@ -16,10 +16,14 @@ global VerticalInvert := false  ; Set to true to invert vertical scroll directio
 global HorizontalInvert := false  ; Set to true to invert horizontal scroll direction
 global IsScrolling := false
 global originalX, originalY
+global accHoriz := 0.0
+global accVert := 0.0
 
 StartScrolling() {
     global IsScrolling := true
     global originalX, originalY
+    global accHoriz := 0.0
+    global accVert := 0.0
     
     CoordMode "Mouse", "Screen"  ; Use screen-absolute coordinates.
     
@@ -41,26 +45,28 @@ StartScrolling() {
         if (deltaX != 0 || deltaY != 0) {
             ; Horizontal scrolling
             if (deltaX != 0) {
-                if (HorizontalInvert) {
-                    wheelDirection := (deltaX > 0) ? "WheelLeft " : "WheelRight "
-                } else {
-                    wheelDirection := (deltaX > 0) ? "WheelRight " : "WheelLeft "
-                }
-                wheelAmount := Round(Abs(deltaX) * ScrollSpeed / 20)
-                if (wheelAmount > 0) {
-                    SendEvent "{Blind}{" . wheelDirection . wheelAmount . "}"
+                horizDelta := deltaX * (HorizontalInvert ? -1 : 1) * ScrollSpeed / 20.0
+                accHoriz += horizDelta
+                if (Abs(accHoriz) >= 0.5) {  ; Use 0.5 to align with rounding behavior
+                    wheelAmountH := Round(Abs(accHoriz))
+                    if (wheelAmountH > 0) {
+                        wheelDirectionH := (accHoriz > 0) ? "WheelRight " : "WheelLeft "
+                        SendEvent "{Blind}{" . wheelDirectionH . wheelAmountH . "}"
+                        accHoriz -= (accHoriz > 0 ? wheelAmountH : -wheelAmountH)
+                    }
                 }
             }
             ; Vertical scrolling
             if (deltaY != 0) {
-                if (VerticalInvert) {
-                    wheelDirection := (deltaY > 0) ? "WheelUp " : "WheelDown "
-                } else {
-                    wheelDirection := (deltaY > 0) ? "WheelDown " : "WheelUp "
-                }
-                wheelAmount := Round(Abs(deltaY) * ScrollSpeed / 20)
-                if (wheelAmount > 0) {
-                    SendEvent "{Blind}{" . wheelDirection . wheelAmount . "}"
+                vertDelta := deltaY * (VerticalInvert ? -1 : 1) * ScrollSpeed / 20.0
+                accVert += vertDelta
+                if (Abs(accVert) >= 0.5) {  ; Use 0.5 to align with rounding behavior
+                    wheelAmountV := Round(Abs(accVert))
+                    if (wheelAmountV > 0) {
+                        wheelDirectionV := (accVert > 0) ? "WheelDown " : "WheelUp "
+                        SendEvent "{Blind}{" . wheelDirectionV . wheelAmountV . "}"
+                        accVert -= (accVert > 0 ? wheelAmountV : -wheelAmountV)
+                    }
                 }
             }
         }
