@@ -17,55 +17,51 @@ global HorizontalInvert := false  ; Set to true to invert horizontal scroll dire
 global IsScrolling := false
 global originalX, originalY
 
-; Start scrolling mode
 StartScrolling() {
     global IsScrolling := true
-    global originalX, originalY, lastX, lastY
+    global originalX, originalY
+    
+    CoordMode "Mouse", "Screen"  ; Use screen-absolute coordinates.
+    
+    ; Temporarily enable per-monitor DPI awareness to prevent OS scaling mismatches.
+    prevContext := DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")  ; -3 is DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE
     
     ; Store original mouse position
     MouseGetPos(&originalX, &originalY)
-    lastX := originalX
-    lastY := originalY
-
-    ; Accumulators for fractional wheel amounts
-    accum_wheel_h := 0.0
-    accum_wheel_v := 0.0
     
     ; Capture mouse events for scrolling
     while (IsScrolling && (GetKeyState("XButton1", "P") || GetKeyState("XButton2", "P"))) {
         MouseGetPos(&currentX, &currentY)
         
-        ; Calculate movement relative to last position
-        deltaX := currentX - lastX
-        deltaY := currentY - lastY
+        ; Calculate movement relative to original position
+        deltaX := currentX - originalX
+        deltaY := currentY - originalY
         
-        ; Update last position
-        lastX := currentX
-        lastY := currentY
-        
-        ; Horizontal scrolling with optional inversion and accumulation
-        effective_deltaX := InvertHorizontal ? -deltaX : deltaX
-        accum_wheel_h += effective_deltaX * (ScrollSpeed / 20.0)
-        if (accum_wheel_h != 0) {
-            h_sign := accum_wheel_h > 0 ? 1 : -1
-            h_direction := h_sign > 0 ? "WheelRight " : "WheelLeft "
-            h_amount := Round(Abs(accum_wheel_h))
-            if (h_amount > 0) {
-                SendEvent "{Blind}{" . h_direction . h_amount . "}"
-                accum_wheel_h -= h_amount * h_sign
+        ; Perform scrolling (only if there's movement)
+        if (deltaX != 0 || deltaY != 0) {
+            ; Horizontal scrolling
+            if (deltaX != 0) {
+                if (HorizontalInvert) {
+                    wheelDirection := (deltaX > 0) ? "WheelLeft " : "WheelRight "
+                } else {
+                    wheelDirection := (deltaX > 0) ? "WheelRight " : "WheelLeft "
+                }
+                wheelAmount := Round(Abs(deltaX) * ScrollSpeed / 20)
+                if (wheelAmount > 0) {
+                    SendEvent "{Blind}{" . wheelDirection . wheelAmount . "}"
+                }
             }
-        }
-        
-        ; Vertical scrolling with optional inversion and accumulation
-        effective_deltaY := InvertVertical ? -deltaY : deltaY
-        accum_wheel_v += effective_deltaY * (ScrollSpeed / 20.0)
-        if (accum_wheel_v != 0) {
-            v_sign := accum_wheel_v > 0 ? 1 : -1
-            v_direction := v_sign > 0 ? "WheelDown " : "WheelUp "
-            v_amount := Round(Abs(accum_wheel_v))
-            if (v_amount > 0) {
-                SendEvent "{Blind}{" . v_direction . v_amount . "}"
-                accum_wheel_v -= v_amount * v_sign
+            ; Vertical scrolling
+            if (deltaY != 0) {
+                if (VerticalInvert) {
+                    wheelDirection := (deltaY > 0) ? "WheelUp " : "WheelDown "
+                } else {
+                    wheelDirection := (deltaY > 0) ? "WheelDown " : "WheelUp "
+                }
+                wheelAmount := Round(Abs(deltaY) * ScrollSpeed / 20)
+                if (wheelAmount > 0) {
+                    SendEvent "{Blind}{" . wheelDirection . wheelAmount . "}"
+                }
             }
         }
         
@@ -74,6 +70,9 @@ StartScrolling() {
         
         Sleep 10
     }
+    
+    ; Restore previous DPI awareness context
+    DllCall("SetThreadDpiAwarenessContext", "ptr", prevContext, "ptr")
     
     global IsScrolling := false
 }
